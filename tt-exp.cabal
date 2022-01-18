@@ -1,0 +1,62 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.33.0.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 6fe07cd54f64948e8e6d794883d84f59dfd25c9e484676922de5205f6a6bf382
+
+name:           tt-exp
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/CoderPuppy/tt-exp#readme>
+homepage:       https://github.com/CoderPuppy/tt-exp#readme
+bug-reports:    https://github.com/CoderPuppy/tt-exp/issues
+author:         CoderPuppy
+maintainer:     coderpup@gmail.com
+copyright:      2022 CoderPuppy
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+
+source-repository head
+  type: git
+  location: https://github.com/CoderPuppy/tt-exp
+
+library
+  exposed-modules:
+      TTExp.Basic
+      TTExp.Core
+      TTExp.Cubical
+      TTExp.Holes
+      TTExp.Refinements
+      TTExp.Util
+  other-modules:
+      Paths_tt_exp
+  hs-source-dirs:
+      src
+  default-extensions: ApplicativeDo BangPatterns BinaryLiterals BlockArguments ConstrainedClassMethods ConstraintKinds DataKinds DefaultSignatures DeriveAnyClass DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveLift DeriveTraversable DerivingStrategies DerivingVia DisambiguateRecordFields EmptyCase EmptyDataDecls EmptyDataDeriving ExistentialQuantification ExplicitForAll ExplicitNamespaces FunctionalDependencies GADTSyntax GADTs GeneralizedNewtypeDeriving ImplicitParams ImportQualifiedPost ImpredicativeTypes KindSignatures LambdaCase LiberalTypeSynonyms MagicHash MonoLocalBinds MultiParamTypeClasses MultiWayIf NamedFieldPuns NamedWildCards NegativeLiterals NumDecimals NumericUnderscores OverloadedLabels PartialTypeSignatures PatternGuards PatternSynonyms PolyKinds QuantifiedConstraints RankNTypes RecordWildCards RoleAnnotations ScopedTypeVariables StandaloneDeriving TemplateHaskell TemplateHaskellQuotes TupleSections TypeApplications TypeFamilies TypeFamilyDependencies TypeInType TypeOperators UnboxedSums UnboxedTuples UnliftedNewtypes ViewPatterns
+  ghc-options: -Wno-tabs
+  build-depends:
+      base >=4.7 && <5
+    , data-fix
+    , deriving-compat
+    , either
+    , extra
+    , safe
+  default-language: Haskell2010
+
+test-suite tt-exp-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_tt_exp
+  hs-source-dirs:
+      test
+  default-extensions: ApplicativeDo BangPatterns BinaryLiterals BlockArguments ConstrainedClassMethods ConstraintKinds DataKinds DefaultSignatures DeriveAnyClass DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveLift DeriveTraversable DerivingStrategies DerivingVia DisambiguateRecordFields EmptyCase EmptyDataDecls EmptyDataDeriving ExistentialQuantification ExplicitForAll ExplicitNamespaces FunctionalDependencies GADTSyntax GADTs GeneralizedNewtypeDeriving ImplicitParams ImportQualifiedPost ImpredicativeTypes KindSignatures LambdaCase LiberalTypeSynonyms MagicHash MonoLocalBinds MultiParamTypeClasses MultiWayIf NamedFieldPuns NamedWildCards NegativeLiterals NumDecimals NumericUnderscores OverloadedLabels PartialTypeSignatures PatternGuards PatternSynonyms PolyKinds QuantifiedConstraints RankNTypes RecordWildCards RoleAnnotations ScopedTypeVariables StandaloneDeriving TemplateHaskell TemplateHaskellQuotes TupleSections TypeApplications TypeFamilies TypeFamilyDependencies TypeInType TypeOperators UnboxedSums UnboxedTuples UnliftedNewtypes ViewPatterns
+  ghc-options: -Wno-tabs -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , tt-exp
+  default-language: Haskell2010
