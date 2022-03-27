@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 6fe07cd54f64948e8e6d794883d84f59dfd25c9e484676922de5205f6a6bf382
+-- hash: cb91a8886f0e7cc848bfccd008ddbe577046f6604079dbca48e1f13f46d309e1
 
 name:           tt-exp
 version:        0.1.0.0
@@ -30,6 +30,7 @@ library
       TTExp.Core
       TTExp.Cubical
       TTExp.Holes
+      TTExp.Monad.Meta
       TTExp.Refinements
       TTExp.Util
   other-modules:
@@ -40,11 +41,14 @@ library
   ghc-options: -Wno-tabs
   build-depends:
       base >=4.7 && <5
+    , containers
     , data-fix
     , deriving-compat
     , either
     , extra
     , safe
+    , stm
+    , transformers
   default-language: Haskell2010
 
 test-suite tt-exp-test
@@ -58,5 +62,8 @@ test-suite tt-exp-test
   ghc-options: -Wno-tabs -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
+    , containers
+    , stm
+    , transformers
     , tt-exp
   default-language: Haskell2010

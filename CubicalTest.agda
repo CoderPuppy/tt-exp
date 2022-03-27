@@ -30,29 +30,29 @@ open import Agda.Builtin.Cubical.Path using (PathP)
 --   succ : ℕ → ℕ
 -- {-# BUILTIN NATURAL ℕ #-}
 
-data S¹ : Set where
-  base : S¹
-  loop : PathP (λ _ → S¹) base base
-
-data Inspect {ℓ : Level} (A : Set ℓ) : A → Set ℓ where
-  inspect : (x : A) → Inspect A x
-
-data Unit : Set where
-  unit : Unit
-
-w1 : PathP (λ _ → S¹) base base
-w1 i = primHComp
-  (λ j → λ{
-    (i = i0) → base;
-    (i = i1) → loop j
-  })
-  (loop i)
-
-w2 : 𝕀 → S¹
-w2 i = loop i
-
-w3 : PathP (λ _ → S¹) base base
-w3 i = w2 i
+-- data S¹ : Set where
+--   base : S¹
+--   loop : PathP (λ _ → S¹) base base
+--
+-- data Inspect {ℓ : Level} (A : Set ℓ) : A → Set ℓ where
+--   inspect : (x : A) → Inspect A x
+--
+-- data Unit : Set where
+--   unit : Unit
+--
+-- w1 : PathP (λ _ → S¹) base base
+-- w1 i = primHComp
+--   (λ j → λ{
+--     (i = i0) → base;
+--     (i = i1) → loop j
+--   })
+--   (loop i)
+--
+-- w2 : 𝕀 → S¹
+-- w2 i = loop i
+--
+-- w3 : PathP (λ _ → S¹) base base
+-- w3 i = w2 i
 
 -- Cube' : {ℓ : Level} → (n : ℕ) → Set ℓ
 -- Cube' 0 A = A

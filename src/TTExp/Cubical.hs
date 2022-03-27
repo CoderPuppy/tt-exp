@@ -1,11 +1,13 @@
 module TTExp.Cubical where
 
+import Prelude hiding (pi)
+
+import Control.Monad (when)
 import Data.Either.Combinators (maybeToRight)
 import Data.Eq.Deriving (deriveEq1)
-import Prelude hiding (pi)
+import Data.Functor.Identity (Identity(runIdentity))
 import Safe (atMay)
 import Text.Show.Deriving (deriveShow1)
-import Control.Monad (when)
 
 import TTExp.Core qualified as Core
 
@@ -43,22 +45,25 @@ pi at rt = Pi at $ Lam at rt
 fpi :: Term -> Term -> Term
 fpi at rt = FPi at $ Lam at rt
 
-instance Core.ExtForce LamE Ext where
-	extForce (I0:as) EMax = Just (as, Lam I $ Core.Var 0)
-	extForce (a:I0:as) EMax = Just (as, a)
-	extForce (I1:as) EMax = Just (as, Lam I I1)
-	extForce (a:I1:as) EMax = Just (as, I1)
-	extForce (I0:as) EMin = Just (as, Lam I I0)
-	extForce (a:I0:as) EMin = Just (as, I0)
-	extForce (I1:as) EMin = Just (as, Lam I $ Core.Var 0)
-	extForce (a:I1:as) EMin = Just (as, a)
-	extForce (I0:as) ENeg = Just (as, I1)
-	extForce (I1:as) ENeg = Just (as, I0)
-	extForce (_:l:i:as) EMkPathP = Just (i:as, l)
-	extForce _ _ = Nothing
+instance Core.ExtForce LamE Ext Identity where
+	extForce (I0:as) EMax = pure $ Just (as, Lam I $ Core.Var 0)
+	extForce (a:I0:as) EMax = pure $ Just (as, a)
+	extForce (I1:as) EMax = pure $ Just (as, Lam I I1)
+	extForce (a:I1:as) EMax = pure $ Just (as, I1)
+	extForce (I0:as) EMin = pure $ Just (as, Lam I I0)
+	extForce (a:I0:as) EMin = pure $ Just (as, I0)
+	extForce (I1:as) EMin = pure $ Just (as, Lam I $ Core.Var 0)
+	extForce (a:I1:as) EMin = pure $ Just (as, a)
+	extForce (I0:as) ENeg = pure $ Just (as, I1)
+	extForce (I1:as) ENeg = pure $ Just (as, I0)
+	extForce (_:l:i:as) EMkPathP = pure $ Just (i:as, l)
+	extForce _ _ = pure $ Nothing
+
+force :: Term -> Term
+force = runIdentity . Core.force
 
 unify :: Term -> Term -> Either String ()
-unify a b = case (Core.force a, Core.force b) of
+unify a b = case (force a, force b) of
 	(Core.App af aa, Core.App bf ba) -> do
 		unify af bf
 		unify aa ba
@@ -73,9 +78,10 @@ typeCheck env (Core.Var v) =
 	fmap (Core.subst $ Core.Var . (+ (v + 1))) $
 	maybeToRight "unbound variable" $ atMay env v
 typeCheck env (Core.App f a) = do
-	(fta, ftr) <- fmap Core.force (typeCheck env f) >>= \case
+	(fta, ftr) <- fmap force (typeCheck env f) >>= \case
 		Pi fta ftr -> pure (fta, ftr)
-		LiftFT (Core.force -> FPi fta ftr) -> pure (LiftFT fta, LiftFT ftr)
+		LiftFT (force -> FPi fta ftr) ->
+			pure (LiftFT fta, LiftFT ftr)
 		PathP p _ _ -> pure (I, p)
 		ft -> Left $ "invalid function type: " <> show ft
 	at <- typeCheck env a
@@ -85,7 +91,7 @@ typeCheck env (Lam at b) = do
 	att <- typeCheck env at
 	unify att Type
 	rt <- typeCheck (at:env) b
-	pure $ case (Core.force at, Core.force rt) of
+	pure $ case (force at, force rt) of
 		(LiftFT at', LiftFT rt') -> LiftFT $ fpi at rt
 		(at, rt) -> pi at rt
 typeCheck env Type = pure Type

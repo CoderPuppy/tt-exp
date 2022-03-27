@@ -1,9 +1,10 @@
 module TTExp.Refinements where
 
+import Prelude hiding (pi)
+
 import Data.Either.Combinators (maybeToRight)
 import Data.Eq.Deriving (deriveEq1)
 import Data.Foldable (foldl')
-import Prelude hiding (pi)
 import Safe (atMay)
 import Text.Show.Deriving (deriveShow1)
 
@@ -45,6 +46,8 @@ unify env a b = case (force env a, force env b) of
 		unify (aat:env) ab bb
 	(a, b) | a == b -> pure ()
 	(a, b) -> Left $ "unification mismatch: " <> show a <> " /= " <> show b
+
+
 
 typeCheck :: [Term] -> Term -> Either String Term
 typeCheck env (Core.Var v) =

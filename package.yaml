@@ -20,6 +20,9 @@ description:         Please see the README on GitHub at <https://github.com/Code
 
 dependencies:
 - base >= 4.7 && < 5
+- transformers
+- stm
+- containers
 
 ghc-options:
 - -Wno-tabs

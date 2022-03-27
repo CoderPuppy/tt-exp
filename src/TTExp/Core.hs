@@ -1,7 +1,10 @@
 module TTExp.Core where
 
+import Control.Monad.Trans.Maybe (MaybeT(MaybeT), runMaybeT)
+import Data.Foldable (fold, foldl')
+import Data.IntSet qualified as IS
+
 import TTExp.Util (Lift(Lift))
-import Data.Foldable (foldl')
 
 data Term l e
 	= Var Int
@@ -11,6 +14,15 @@ data Term l e
 	deriving (Show, Eq)
 pattern Lam l b = Lam' (Lift l) b
 pattern Ext e = Ext' (Lift e)
+
+freeVars :: (Functor l, Functor e, Foldable l, Foldable e) => Term l e -> IS.IntSet
+freeVars (Var v) = IS.singleton v
+freeVars (App f a) = IS.union (freeVars f) (freeVars a)
+freeVars (Lam l b) =
+	IS.union
+		(fold $ fmap freeVars l)
+		(IS.delete 0 $ IS.mapMonotonic (+ -1) $ freeVars b)
+freeVars (Ext e) = fold $ fmap freeVars e
 
 envCons :: a -> (Int -> a) -> (Int -> a)
 envCons z s 0 = z
@@ -24,14 +36,27 @@ subst env (Lam l b) = Lam
 	(subst (envCons (Var 0) (subst (Var . (+1)) . env)) b)
 subst env (Ext e) = Ext $ fmap (subst env) e
 
-class ExtForce l e where
-	extForce :: [Term l e] -> e (Term l e) -> Maybe ([Term l e], Term l e)
+type Spine l e = ([Term l e], Term l e)
 
-force' :: (Functor l, Functor e, ExtForce l e) => [Term l e] -> Term l e -> Term l e
-force' as (App f a) = force' (a:as) f
-force' (a:as) (Lam _ b) = force' as $ subst (envCons a Var) b
-force' as (Ext e) | Just (as', t') <- extForce as e = force' as' t'
-force' as t = foldl' App t as
+spine :: [Term l e] -> Term l e -> Spine l e
+spine as (App f a) = spine (a:as) f
+spine as t = (as, t)
 
-force :: (Functor l, Functor e, ExtForce l e) => Term l e -> Term l e
-force = force' []
+unspine :: [Term l e] -> Term l e -> Term l e
+unspine as t = foldl' App t as
+
+class ExtForce l e m where
+	extForce :: [Term l e] -> e (Term l e) -> m (Maybe (Spine l e))
+
+forceSpine ::
+	(Functor l, Functor e, ExtForce l e m, Monad m) =>
+	[Term l e] -> Term l e -> m (Spine l e)
+forceSpine as t = case spine as t of
+	(a:as, Lam _ b) -> forceSpine as $ subst (envCons a Var) b
+	s@(as, Ext e) -> extForce as e >>= \case
+		Nothing -> pure s
+		Just s' -> uncurry forceSpine s'
+	s -> pure s
+
+force :: (Functor l, Functor e, ExtForce l e m, Monad m) => Term l e -> m (Term l e)
+force = fmap (uncurry unspine) . forceSpine []
