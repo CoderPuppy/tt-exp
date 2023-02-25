@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: cb91a8886f0e7cc848bfccd008ddbe577046f6604079dbca48e1f13f46d309e1
+-- hash: 0a085a59e3d7ad65dd4506b90493f442b159d88e69dad9d7bd0d1709cdaf95e1
 
 name:           tt-exp
 version:        0.1.0.0
@@ -32,6 +32,7 @@ library
       TTExp.Holes
       TTExp.Monad.Meta
       TTExp.Refinements
+      TTExp.Universes
       TTExp.Util
   other-modules:
       Paths_tt_exp
