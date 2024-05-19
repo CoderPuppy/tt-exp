@@ -1,10 +1,10 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.33.0.
+-- This file has been generated from package.yaml by hpack version 0.35.2.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 0a085a59e3d7ad65dd4506b90493f442b159d88e69dad9d7bd0d1709cdaf95e1
+-- hash: 9112a6c132905df5f58c6d4457c1947236b7bde53ce6b43e30ff196e1949c8f7
 
 name:           tt-exp
 version:        0.1.0.0
@@ -26,19 +26,79 @@ source-repository head
 
 library
   exposed-modules:
-      TTExp.Basic
-      TTExp.Core
-      TTExp.Cubical
-      TTExp.Holes
-      TTExp.Monad.Meta
-      TTExp.Refinements
+      TTExp.EtaUnify
       TTExp.Universes
-      TTExp.Util
   other-modules:
       Paths_tt_exp
   hs-source-dirs:
       src
-  default-extensions: ApplicativeDo BangPatterns BinaryLiterals BlockArguments ConstrainedClassMethods ConstraintKinds DataKinds DefaultSignatures DeriveAnyClass DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveLift DeriveTraversable DerivingStrategies DerivingVia DisambiguateRecordFields EmptyCase EmptyDataDecls EmptyDataDeriving ExistentialQuantification ExplicitForAll ExplicitNamespaces FunctionalDependencies GADTSyntax GADTs GeneralizedNewtypeDeriving ImplicitParams ImportQualifiedPost ImpredicativeTypes KindSignatures LambdaCase LiberalTypeSynonyms MagicHash MonoLocalBinds MultiParamTypeClasses MultiWayIf NamedFieldPuns NamedWildCards NegativeLiterals NumDecimals NumericUnderscores OverloadedLabels PartialTypeSignatures PatternGuards PatternSynonyms PolyKinds QuantifiedConstraints RankNTypes RecordWildCards RoleAnnotations ScopedTypeVariables StandaloneDeriving TemplateHaskell TemplateHaskellQuotes TupleSections TypeApplications TypeFamilies TypeFamilyDependencies TypeInType TypeOperators UnboxedSums UnboxedTuples UnliftedNewtypes ViewPatterns
+  default-extensions:
+      ApplicativeDo
+      BangPatterns
+      BinaryLiterals
+      BlockArguments
+      ConstrainedClassMethods
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveDataTypeable
+      DeriveFoldable
+      DeriveFunctor
+      DeriveGeneric
+      DeriveLift
+      DeriveTraversable
+      DerivingStrategies
+      DerivingVia
+      DisambiguateRecordFields
+      EmptyCase
+      EmptyDataDecls
+      EmptyDataDeriving
+      ExistentialQuantification
+      ExplicitForAll
+      ExplicitNamespaces
+      FunctionalDependencies
+      GADTSyntax
+      GADTs
+      GeneralizedNewtypeDeriving
+      ImplicitParams
+      ImportQualifiedPost
+      ImpredicativeTypes
+      KindSignatures
+      LambdaCase
+      LiberalTypeSynonyms
+      MagicHash
+      MonoLocalBinds
+      MultiParamTypeClasses
+      MultiWayIf
+      NamedFieldPuns
+      NamedWildCards
+      NegativeLiterals
+      NumDecimals
+      NumericUnderscores
+      OverloadedLabels
+      PartialTypeSignatures
+      PatternGuards
+      PatternSynonyms
+      PolyKinds
+      QuantifiedConstraints
+      RankNTypes
+      RecordWildCards
+      RoleAnnotations
+      ScopedTypeVariables
+      StandaloneDeriving
+      TemplateHaskell
+      TemplateHaskellQuotes
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeFamilyDependencies
+      TypeInType
+      TypeOperators
+      UnboxedSums
+      UnboxedTuples
+      UnliftedNewtypes
+      ViewPatterns
   ghc-options: -Wno-tabs
   build-depends:
       base >=4.7 && <5
@@ -59,7 +119,73 @@ test-suite tt-exp-test
       Paths_tt_exp
   hs-source-dirs:
       test
-  default-extensions: ApplicativeDo BangPatterns BinaryLiterals BlockArguments ConstrainedClassMethods ConstraintKinds DataKinds DefaultSignatures DeriveAnyClass DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveLift DeriveTraversable DerivingStrategies DerivingVia DisambiguateRecordFields EmptyCase EmptyDataDecls EmptyDataDeriving ExistentialQuantification ExplicitForAll ExplicitNamespaces FunctionalDependencies GADTSyntax GADTs GeneralizedNewtypeDeriving ImplicitParams ImportQualifiedPost ImpredicativeTypes KindSignatures LambdaCase LiberalTypeSynonyms MagicHash MonoLocalBinds MultiParamTypeClasses MultiWayIf NamedFieldPuns NamedWildCards NegativeLiterals NumDecimals NumericUnderscores OverloadedLabels PartialTypeSignatures PatternGuards PatternSynonyms PolyKinds QuantifiedConstraints RankNTypes RecordWildCards RoleAnnotations ScopedTypeVariables StandaloneDeriving TemplateHaskell TemplateHaskellQuotes TupleSections TypeApplications TypeFamilies TypeFamilyDependencies TypeInType TypeOperators UnboxedSums UnboxedTuples UnliftedNewtypes ViewPatterns
+  default-extensions:
+      ApplicativeDo
+      BangPatterns
+      BinaryLiterals
+      BlockArguments
+      ConstrainedClassMethods
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveDataTypeable
+      DeriveFoldable
+      DeriveFunctor
+      DeriveGeneric
+      DeriveLift
+      DeriveTraversable
+      DerivingStrategies
+      DerivingVia
+      DisambiguateRecordFields
+      EmptyCase
+      EmptyDataDecls
+      EmptyDataDeriving
+      ExistentialQuantification
+      ExplicitForAll
+      ExplicitNamespaces
+      FunctionalDependencies
+      GADTSyntax
+      GADTs
+      GeneralizedNewtypeDeriving
+      ImplicitParams
+      ImportQualifiedPost
+      ImpredicativeTypes
+      KindSignatures
+      LambdaCase
+      LiberalTypeSynonyms
+      MagicHash
+      MonoLocalBinds
+      MultiParamTypeClasses
+      MultiWayIf
+      NamedFieldPuns
+      NamedWildCards
+      NegativeLiterals
+      NumDecimals
+      NumericUnderscores
+      OverloadedLabels
+      PartialTypeSignatures
+      PatternGuards
+      PatternSynonyms
+      PolyKinds
+      QuantifiedConstraints
+      RankNTypes
+      RecordWildCards
+      RoleAnnotations
+      ScopedTypeVariables
+      StandaloneDeriving
+      TemplateHaskell
+      TemplateHaskellQuotes
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeFamilyDependencies
+      TypeInType
+      TypeOperators
+      UnboxedSums
+      UnboxedTuples
+      UnliftedNewtypes
+      ViewPatterns
   ghc-options: -Wno-tabs -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
