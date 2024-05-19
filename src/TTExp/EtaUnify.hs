@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -Wno-tabs -Wincomplete-patterns #-}
+{-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE ImportQualifiedPost #-}
@@ -7,11 +8,12 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE ParallelListComp #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE StarIsType #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module TTExp.EtaUnify where
 
+import Control.Applicative
 import Control.Monad
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
@@ -340,17 +342,20 @@ unify ml ctx ty a b = case (a, b) of
 					)
 					([], emptyEnv) (unCtx ctx)
 
-				for_ (reverse $ zip [0..] $ zip (unCtx body_ctx) $ zip args $ unEnv $ abstractEnv body_ctx)
-					\(i, (arg_ty, (arg, abstract_arg))) ->
-						case arg of
-							VNeu (Var var) [] ->
-								lift $ updateMeta (ctx_metas !! unIdx (quoteLvl (ctxLen ctx) var)) $ \case
-									Nothing -> Just $ eval emptyEnv $
-										flip (foldr $ const Lam) args $
-										Neu $ Var $ Idx i
-									Just _ -> Just VNonLinear
-							_ -> unify (Just ml') body_ctx (gluedVal arg_ty) abstract_arg $
-								eval env $ quote (ctxLen ctx) arg
+				sequence_ $ reverse $ getZipList $ do
+					i <- ZipList [0..]
+					arg_ty <- ZipList $ unCtx body_ctx
+					arg <- ZipList args
+					abstract_arg <- ZipList $ unEnv $ abstractEnv body_ctx
+					pure $ case arg of
+						VNeu (Var var) [] ->
+							lift $ updateMeta (ctx_metas !! unIdx (quoteLvl (ctxLen ctx) var)) $ \case
+								Nothing -> Just $ eval emptyEnv $
+									flip (foldr $ const Lam) args $
+									Neu $ Var $ Idx i
+								Just _ -> Just VNonLinear
+						_ -> unify (Just ml') body_ctx (gluedVal arg_ty) abstract_arg $
+							eval env $ quote (ctxLen ctx) arg
 
 				tm <- lift $ applyInversion emptyCtx (metaDataTy md) sp $
 					quote (ctxLen body_ctx) $ eval env $ quote (ctxLen ctx) other
