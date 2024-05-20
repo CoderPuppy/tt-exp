@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 9112a6c132905df5f58c6d4457c1947236b7bde53ce6b43e30ff196e1949c8f7
+-- hash: 6d9d53c269f38f071407a085410825eea465344074e133bb2a0fbe97ee26d264
 
 name:           tt-exp
 version:        0.1.0.0
@@ -27,6 +27,7 @@ source-repository head
 library
   exposed-modules:
       TTExp.EtaUnify
+      TTExp.EtaUnify2
       TTExp.Universes
   other-modules:
       Paths_tt_exp
@@ -77,6 +78,7 @@ library
       NumDecimals
       NumericUnderscores
       OverloadedLabels
+      ParallelListComp
       PartialTypeSignatures
       PatternGuards
       PatternSynonyms
@@ -164,6 +166,7 @@ test-suite tt-exp-test
       NumDecimals
       NumericUnderscores
       OverloadedLabels
+      ParallelListComp
       PartialTypeSignatures
       PatternGuards
       PatternSynonyms
