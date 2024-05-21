@@ -7,8 +7,10 @@ import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Reader
 import Control.Monad.Trans.State
+import Data.Foldable
 import Data.Functor.Identity
 import Data.IntMap qualified as IM
+import Data.Maybe
 import GHC.Stack (HasCallStack)
 
 newtype MetaV = MetaV { unMetaV :: Int } deriving (Show, Eq)
@@ -43,6 +45,7 @@ newtype Spine = Spine { unSpine :: [Proj Val] } deriving (Show)
 pattern EmptySp = Spine []
 pattern ProjSp sp proj <- Spine (proj:(Spine -> sp))
 	where ProjSp sp proj = Spine (proj:unSpine sp)
+{-# COMPLETE EmptySp, ProjSp #-}
 
 data Neu = Neu'Var Lvl | Neu'Meta (MetaRef Val) deriving (Show)
 
@@ -68,6 +71,7 @@ newtype Env = Env { unEnv :: [Val] } deriving (Show)
 pattern EmptyEnv = Env []
 pattern ExtendEnv env val <- Env (val:(Env -> env))
 	where ExtendEnv env val = Env (val:unEnv env)
+{-# COMPLETE EmptyEnv, ExtendEnv #-}
 evalVar :: Env -> Idx -> Val
 evalVar (Env env) (Idx idx) = env !! idx
 
@@ -102,8 +106,9 @@ data Glued = Glued
 newtype Ctx = Ctx { unCtx :: [Glued] } deriving (Show)
 pattern EmptyCtx = Ctx []
 pattern ExtendCtx ctx ty <- Ctx (ty:(Ctx -> ctx))
-extendCtx :: Ctx -> Val -> (Ctx, Lvl)
-extendCtx ctx ty = error "TODO"
+{-# COMPLETE EmptyCtx, ExtendCtx #-}
+extendCtx :: Glueable ty => Ctx -> ty -> (Ctx, Lvl)
+extendCtx ctx@(Ctx tys) ty = (Ctx $ glue ctx ty:tys, Lvl $ length tys)
 
 abstractEnv :: Ctx -> Env
 abstractEnv (Ctx ctx) = Env $ fmap (vVar . Lvl) $ reverse [0..length ctx - 1]
@@ -153,10 +158,13 @@ quote ctx val = case val of
 	VPair fst snd -> TPair (quote ctx fst) (quote ctx snd)
 
 data MetaData = MetaData
-	{
+	{ metaDataCtx :: Ctx
+	, metaDataTy :: Glued
+	-- idea: maybe store Val if ctx is empty
+	, metaDataValue :: Maybe Tm
 	} deriving (Show)
 data MetaContext = MetaContext
-	{ metaContextLinearLevel :: Maybe Lvl
+	{ metaContextLinearLevel :: Maybe MetaV
 	} deriving (Show)
 data MetaState = MetaState
 	{ metaStateData :: IM.IntMap MetaData
@@ -169,10 +177,14 @@ instance MonadTrans MetaT where
 type MetaM a = MetaT Identity a
 newMeta :: Glueable ty => Ctx -> ty -> MetaM MetaV
 newMeta ctx ty = error "TODO"
+lookupMeta :: MetaV -> MetaM MetaData
+lookupMeta m = error "TODO"
 solveMeta :: MetaV -> Tm -> MetaM ()
 solveMeta m sol = error "TODO"
 force :: Val -> MetaM Val
-force = error "TODO"
+force val = error "TODO"
+withLinearity :: MetaM a -> MetaM a
+withLinearity body = error "TODO"
 
 newtype UnifyErr = UnifyErr { unUnifyErr :: ShowS }
 instance Show UnifyErr where
@@ -227,8 +239,7 @@ invertProj inv@Inversion{..} proj = case proj of
 			}
 
 finishInversion :: Ctx -> Inversion -> UnifyM (Val -> MetaM Tm)
-finishInversion eq_ctx Inversion{..} = do
-	-- TODO: meta level
+finishInversion eq_ctx Inversion{..} = ExceptT $ withLinearity $ runExceptT do
 	-- metas_env : inversionCtx ⊢ eq_ctx
 	(metas, metas_env) <- lift $ buildMetas inversionCtx eq_ctx
 	sequence_ $ reverse $ getZipList do
@@ -240,8 +251,9 @@ finishInversion eq_ctx Inversion{..} = do
 		param <- ZipList $ unEnv $ abstractEnv inversionCtx
 		pure $ case quote eq_ctx arg of
 			TVar var -> lift $ solveMeta (metas !! unIdx var) (quote inversionCtx param)
-			arg -> unify _ inversionCtx (gluedVal ty) param (eval metas_env arg)
+			arg -> unify inversionCtx (gluedVal ty) param (eval metas_env arg)
 	pure $ inversionBuild . quote inversionCtx . eval metas_env . quote eq_ctx
+	-- TODO: check for correctness (linearity, solutions)
 
 	where
 		buildMetas :: Ctx -> Ctx -> MetaM ([MetaV], Env)
@@ -252,32 +264,73 @@ finishInversion eq_ctx Inversion{..} = do
 				meta <- newMeta inversionCtx $ eval metas_env $ gluedTm ty
 				pure (meta:metas, ExtendEnv metas_env $ vMetaRef inversionCtx meta)
 
-unify :: Maybe MetaV -> Ctx -> Val -> Val -> Val -> UnifyM ()
-unify ml ctx ty a b = case (a, b) of
-		(a@(VMeta a_m a_sp), b@(VMeta b_m b_sp)) -> error "TODO"
-		(VMeta m sp, b) -> unifyMeta m sp b
-		(a, VMeta m sp) -> unifyMeta m sp a
+data UnifyArg
+	= UA'Unsolved (MetaRef Val) MetaData Spine
+	| UA'Val Val
+	| UA'Absorbed
+	deriving (Show)
 
-		(VLam body, b) -> unifyLam body b
-		(a, VLam body) -> unifyLam body a
+unifyArg :: Val -> MetaM UnifyArg
+unifyArg (VMeta mr@MetaRef{..} sp) = do
+	md@MetaData{..} <- lookupMeta metaRefV
+	case metaDataValue of
+		Nothing -> pure $ UA'Unsolved mr md sp
+		Just tm -> MetaT do
+			MetaContext{..} <- ask
+			case metaContextLinearLevel of
+				Just (MetaV l)
+					| unMetaV metaRefV >= l ->
+					do
+						lift $ modify \ms -> ms
+							{ metaStateData = IM.alter
+								(\md -> Just $ (fromJust md) { metaDataValue = Just TNonLinear })
+								(unMetaV metaRefV) (metaStateData ms) }
+						pure UA'Absorbed
+				_ -> pure $ UA'Val $ eval (Env metaRefSub) tm
+unifyArg v = pure $ UA'Val v
 
-		(VPair fst snd, b) -> unifyPair fst snd b
-		(a, VPair fst snd) -> unifyPair fst snd a
+unify :: Ctx -> Val -> Val -> Val -> UnifyM ()
+unify ctx ty a b = do
+		ua <- lift $ unifyArg a
+		ub <- lift $ unifyArg b
+		case (ua, ub) of
+			(UA'Absorbed, _) -> pure ()
+			(_, UA'Absorbed) -> pure ()
 
-		(VType, VType) -> pure ()
+			(UA'Unsolved a_mr a_md a_sp, UA'Unsolved b_mr b_md b_sp) -> error "TODO"
+			(UA'Unsolved mr md sp, UA'Val other) -> solveByInversion mr md sp other
+			(UA'Val other, UA'Unsolved mr md sp) -> solveByInversion mr md sp other
 
-		(VPi a_base a_fam, VPi b_base b_fam) -> unifyTyForm a_base a_fam b_base b_fam
-		(VSg a_base a_fam, VSg b_base b_fam) -> unifyTyForm a_base a_fam b_base b_fam
+			(UA'Val a, UA'Val b) -> case (a, b) of
+				(VLam body, other) -> unifyLam body other
+				(other, VLam body) -> unifyLam body other
 
-		(a@(VVar a_v a_sp), b@(VVar b_v b_sp))
-			| a_v == b_v, Just unif <- unifySpines a_sp b_sp -> unif
+				(VPair fst snd, other) -> unifyPair fst snd other
+				(other, VPair fst snd) -> unifyPair fst snd other
 
-		_ -> throwE $ unifyErr_mismatch ty a b
+				(VType, VType) -> pure ()
 
+				(VPi a_base a_fam, VPi b_base b_fam) -> unifyTyForm a_base a_fam b_base b_fam
+				(VSg a_base a_fam, VSg b_base b_fam) -> unifyTyForm a_base a_fam b_base b_fam
 
+				(a@(VVar a_v a_sp), b@(VVar b_v b_sp))
+					| a_v == b_v, Just unif <- unifySpines a_sp b_sp -> unif
+
+				_ -> throwE $ unifyErr_mismatch ty a b
 	where
-		unifyMeta :: MetaRef Val -> Spine -> Val -> UnifyM ()
-		unifyMeta mr sp other = error "TODO"
+		solveByInversion :: MetaRef Val -> MetaData -> Spine -> Val -> UnifyM ()
+		solveByInversion MetaRef{..} MetaData{..} sp other = do
+			let inv = Inversion
+				{ inversionArgs = metaRefSub
+				, inversionCtx = metaDataCtx
+				, inversionTy = gluedVal metaDataTy
+				, inversionBuild = pure
+				}
+			inv <- lift $ foldrM (flip invertProj) inv (unSpine sp)
+			builder <- finishInversion ctx inv
+			sol <- lift $ builder other
+			-- TODO: occurs check
+			lift $ solveMeta metaRefV sol
 
 		unifyLam :: Family -> Val -> UnifyM ()
 		unifyLam body other = do
@@ -285,7 +338,7 @@ unify ml ctx ty a b = case (a, b) of
 				VPi base fam -> (base, fam)
 				_ -> error $ "Unifying lambda in non-Π-type: " <> show ty
 			let (ctx', var) = extendCtx ctx base
-			unify ml ctx'
+			unify ctx'
 				(apply fam           $ vVar var)
 				(apply body          $ vVar var)
 				(project other $ App $ vVar var)
@@ -295,14 +348,14 @@ unify ml ctx ty a b = case (a, b) of
 			(base, fam) <- flip fmap (lift $ force ty) \case
 				VSg base fam -> (base, fam)
 				_ -> error $ "Unifying pair in non-Σ-type: " <> show ty
-			unify ml ctx base            fst (project other Fst)
-			unify ml ctx (apply fam fst) snd (project other Snd)
+			unify ctx base            fst (project other Fst)
+			unify ctx (apply fam fst) snd (project other Snd)
 
 		unifyTyForm :: Val -> Family -> Val -> Family -> UnifyM ()
 		unifyTyForm a_base a_fam b_base b_fam = do
-			unify ml ctx VType a_base b_base
+			unify ctx VType a_base b_base
 			let (ctx', var) = extendCtx ctx a_base
-			unify ml ctx' VType
+			unify ctx' VType
 				(apply a_fam $ vVar var)
 				(apply b_fam $ vVar var)
 
